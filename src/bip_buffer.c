@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: Apache-2.0
+ * Copyright 2023-2026 Ricardo Rivera */
+
 /**
  * @file bip_buffer.c
  * @brief Bip buffer (bipartite circular buffer) implementation.

@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: Apache-2.0
+ * Copyright 2023-2026 Ricardo Rivera */
+
 #ifndef NDEBUG
 #define NDEBUG /* Disable assert() so graceful return paths execute. */
 #endif

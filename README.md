@@ -1,7 +1,6 @@
 # bip-buffer
 
-A bipartite circular buffer in C for high-performance, zero-copy buffering
-based on [Simon Cooke's design](https://www.codeproject.com/Articles/3479/The-Bip-Buffer-The-Circular-Buffer-with-a-Twist).
+A bipartite circular buffer in C for high-performance, zero-copy buffering.
 
 ## Why a bip buffer?
 
@@ -30,85 +29,63 @@ reads and writes always return a single contiguous span.
 
 ### Memory layout walkthrough
 
-A 16-byte buffer through a full write-read-wrap cycle:
+A 4096-byte buffer through a full write-read-wrap cycle (each column = 256 bytes):
 
-**1. `new_bip_buffer(16)`**
+**1. `new_bip_buffer(4096)`**
 
 ```mermaid
-block-beta
-  columns 16
-  free["free (16)"]:16
-  style free fill:#f5f5f5,color:#999
+packet-beta
+  0-15: "free (4096)"
 ```
 
-**2. `reserve(12)` + `commit(12)` -- data written to Region A**
+**2. `reserve(3072)` + `commit(3072)` -- data written to Region A**
 
 ```mermaid
-block-beta
-  columns 16
-  A["Region A (12)"]:12
-  free["free (4)"]:4
-  style A fill:#4a9eff,color:#fff
-  style free fill:#f5f5f5,color:#999
+packet-beta
+  0-11: "Region A (3072)"
+  12-15: "free (1024)"
 ```
 
-**3. `consume(8)` -- oldest 8 bytes discarded, A shrinks**
+**3. `consume(2048)` -- oldest 2048 bytes discarded, A shrinks**
 
 ```mermaid
-block-beta
-  columns 16
-  free1["free (8)"]:8
-  A["A (4)"]:4
-  free2["free (4)"]:4
-  style A fill:#4a9eff,color:#fff
-  style free1 fill:#f5f5f5,color:#999
-  style free2 fill:#f5f5f5,color:#999
+packet-beta
+  0-7: "free (2048)"
+  8-11: "A (1024)"
+  12-15: "free (1024)"
 ```
 
-**4. `reserve(5)` -- 8 free before A > 4 free after A, wraps to front**
+**4. `reserve(1024)` -- 2048 free before A > 1024 free after A, wraps to front**
 
 ```mermaid
-block-beta
-  columns 16
-  rsv["reserved (5)"]:5
-  free["free (3)"]:3
-  A["A (4)"]:4
-  gap["(4)"]:4
-  style rsv fill:#ffa500,color:#fff
-  style A fill:#4a9eff,color:#fff
-  style free fill:#f5f5f5,color:#999
-  style gap fill:#e8e8e8,color:#bbb
+packet-beta
+  0-3: "reserved (1024)"
+  4-7: "free (1024)"
+  8-11: "A (1024)"
+  12-15: "gap (1024)"
 ```
 
-**5. `commit(5)` -- reservation becomes Region B**
+**5. `commit(1024)` -- reservation becomes Region B**
 
 ```mermaid
-block-beta
-  columns 16
-  B["B (5)"]:5
-  free["free (3)"]:3
-  A["A (4)"]:4
-  gap["(4)"]:4
-  style B fill:#3cb371,color:#fff
-  style A fill:#4a9eff,color:#fff
-  style free fill:#f5f5f5,color:#999
-  style gap fill:#e8e8e8,color:#bbb
+packet-beta
+  0-3: "B (1024)"
+  4-7: "free (1024)"
+  8-11: "A (1024)"
+  12-15: "gap (1024)"
 ```
 
 `peek` returns Region A -- oldest data is always read first.
 
-**6. `consume(4)` -- A fully consumed, B promoted to A**
+**6. `consume(1024)` -- A fully consumed, B promoted to A**
 
 ```mermaid
-block-beta
-  columns 16
-  A["A (5)"]:5
-  free["free (11)"]:11
-  style A fill:#4a9eff,color:#fff
-  style free fill:#f5f5f5,color:#999
+packet-beta
+  0-3: "A (1024)"
+  4-15: "free (3072)"
 ```
 
-In step 4 the 4 bytes after A become temporarily unusable because the
+In step 4 the 1024 bytes after A become temporarily unusable because the
 reservation wraps to the front where more contiguous space is available.
 That space is reclaimed once A is fully consumed (step 6). This trade-off --
 a small amount of temporarily wasted space -- is what guarantees contiguous
@@ -116,27 +93,20 @@ reads and writes without any copying.
 
 ### Buffer state transitions
 
-```mermaid
-stateDiagram-v2
-    [*] --> Empty : new_bip_buffer(size)
+| State | Operation | Next State |
+|-------|-----------|------------|
+| Empty | reserve + commit | A |
+| A | reserve + commit (append) | A |
+| A | partial consume | A |
+| A | reserve wraps + commit | A+B |
+| A | consume all | Empty |
+| A | clear | Empty |
+| A+B | reserve + commit (append B) | A+B |
+| A+B | partial consume A | A+B |
+| A+B | consume all of A | A (B promoted) |
+| A+B | clear | Empty |
 
-    Empty --> A : reserve + commit
-
-    A --> A : extend A
-    A --> A : partial consume
-    A --> A+B : reserve wraps + commit
-    A --> Empty : consume all
-    A --> Empty : clear
-
-    A+B --> A+B : extend B
-    A+B --> A+B : partial consume A
-    A+B --> A : consume all of A (B→A)
-    A+B --> Empty : clear
-
-    Empty --> [*] : delete_bip_buffer
-    A --> [*] : delete_bip_buffer
-    A+B --> [*] : delete_bip_buffer
-```
+`delete_bip_buffer` can be called from any state.
 
 ## API
 
@@ -166,14 +136,18 @@ bip_buffer_t *bb = new_bip_buffer(4096);
 /* Write */
 size_t reserved;
 uint8_t *wr = bb->reserve(bb, payload_len, &reserved);
-memcpy(wr, payload, reserved);
-bb->commit(bb, reserved);
+if (wr) {
+    memcpy(wr, payload, reserved);
+    bb->commit(bb, reserved);
+}
 
 /* Read */
 size_t available;
 uint8_t *rd = bb->peek(bb, &available);
-process(rd, available);
-bb->consume(bb, available);
+if (rd) {
+    process(rd, available);
+    bb->consume(bb, available);
+}
 
 delete_bip_buffer(&bb);   /* bb is set to NULL */
 ```
@@ -415,4 +389,8 @@ Makefile                Build orchestrator
 
 ## License
 
-See repository for license details.
+Apache 2.0 -- see [LICENSE](LICENSE) for details.
+
+## Acknowledgements
+
+Based on [Simon Cooke's bip buffer concept](https://www.codeproject.com/Articles/3479/The-Bip-Buffer-The-Circular-Buffer-with-a-Twist).

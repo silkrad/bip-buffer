@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: Apache-2.0
+ * Copyright 2023-2026 Ricardo Rivera */
+
 #ifndef MOCK_CALLOC_H
 #define MOCK_CALLOC_H
 

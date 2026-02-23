@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: Apache-2.0
+ * Copyright 2023-2026 Ricardo Rivera */
+
 /**
  * @file wrap.c
  * @brief Demonstrates wrap-around behavior and Region B promotion.
