@@ -29,61 +29,33 @@ reads and writes always return a single contiguous span.
 
 ### Memory layout walkthrough
 
-A 4096-byte buffer through a full write-read-wrap cycle (each column = 256 bytes):
+A 4096-byte buffer through a full write-read-wrap cycle:
 
 **1. `new_bip_buffer(4096)`**
 
-```mermaid
-packet-beta
-  0-15: "free (4096)"
-```
+![empty buffer](assets/buf_empty.svg)
 
 **2. `reserve(3072)` + `commit(3072)` -- data written to Region A**
 
-```mermaid
-packet-beta
-  0-11: "Region A (3072)"
-  12-15: "free (1024)"
-```
+![Region A written](assets/buf_write.svg)
 
 **3. `consume(2048)` -- oldest 2048 bytes discarded, A shrinks**
 
-```mermaid
-packet-beta
-  0-7: "free (2048)"
-  8-11: "A (1024)"
-  12-15: "free (1024)"
-```
+![A shrinks after consume](assets/buf_consume.svg)
 
 **4. `reserve(1024)` -- 2048 free before A > 1024 free after A, wraps to front**
 
-```mermaid
-packet-beta
-  0-3: "reserved (1024)"
-  4-7: "free (1024)"
-  8-11: "A (1024)"
-  12-15: "gap (1024)"
-```
+![reservation wraps to front](assets/buf_reserve.svg)
 
 **5. `commit(1024)` -- reservation becomes Region B**
 
-```mermaid
-packet-beta
-  0-3: "B (1024)"
-  4-7: "free (1024)"
-  8-11: "A (1024)"
-  12-15: "gap (1024)"
-```
+![B committed](assets/buf_commit.svg)
 
 `peek` returns Region A -- oldest data is always read first.
 
 **6. `consume(1024)` -- A fully consumed, B promoted to A**
 
-```mermaid
-packet-beta
-  0-3: "A (1024)"
-  4-15: "free (3072)"
-```
+![B promoted to A](assets/buf_promote.svg)
 
 In step 4 the 1024 bytes after A become temporarily unusable because the
 reservation wraps to the front where more contiguous space is available.
