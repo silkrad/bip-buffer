@@ -1,0 +1,10 @@
+---
+:project:
+  :build_root: build/freebsd-x86_64
+
+:flags:
+  :release:
+    :compile:
+      - --target=x86_64-unknown-freebsd14
+      - --sysroot=/opt/sysroot/freebsd-amd64
+      - -fPIC

@@ -1,0 +1,27 @@
+# Claude
+.claude/
+
+# Build artifacts
+build/
+dist/
+compile_commands.json
+
+# Coverage
+*.gcov
+*.gcda
+*.gcno
+
+# Compiled objects and libraries
+*.o
+*.a
+*.so
+*.dylib
+*.lib
+*.dll
+
+# Editor / IDE
+*.swp
+*.swo
+*~
+.vscode/
+.idea/

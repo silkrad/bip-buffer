@@ -1,0 +1,89 @@
+---
+:project:
+  :use_exceptions: FALSE
+  :use_test_preprocessor: :none
+  :use_auxiliary_dependencies: TRUE
+  :build_root: build
+  :release_build: TRUE
+  :test_file_prefix: test_
+
+:release_build:
+  :output: libbip_buffer.a
+
+:environment: []
+
+:extension:
+  :executable: .out
+
+:paths:
+  :test:
+    - test/**
+  :source:
+    - src/**
+  :include:
+    - include/**
+  :support:
+    - test/support
+
+:defines:
+  :test:
+    :*:
+      - TEST
+    :test_bip_buffer_release:
+      - TEST
+      - NDEBUG
+  :release: []
+
+:flags:
+  :release:
+    :compile:
+      - -std=c11
+      - -Wall
+      - -Wextra
+      - -Werror
+      - -pedantic
+      - -O2
+  :test:
+    :compile:
+      :*:
+        - -std=c11
+        - -Wall
+        - -Wextra
+        - -Werror
+        - -pedantic
+    :link:
+      :*:
+        - -Wl,--wrap=calloc
+
+:tools:
+  :release_compiler:
+    :executable: clang
+    :arguments:
+      - -c ${1}
+      - -o ${2}
+      - -I"$": COLLECTION_PATHS_INCLUDE
+  :release_linker:
+    :executable: llvm-ar
+    :arguments:
+      - rcs
+      - ${2}
+      - ${1}
+
+:plugins:
+  :load_paths: []
+  :enabled:
+    - gcov
+    - compile_commands_json_db
+    - report_tests_pretty_stdout
+
+:gcov:
+  :utilities:
+    - gcovr
+  :reports:
+    - HtmlDetailed
+    - Text
+  :gcovr:
+    :report_root: .
+    :html_medium_threshold: 75
+    :html_high_threshold: 90
+    :print_summary: TRUE

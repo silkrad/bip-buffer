@@ -1,0 +1,10 @@
+---
+:project:
+  :build_root: build/arm64
+
+:flags:
+  :release:
+    :compile:
+      - --target=aarch64-linux-gnu
+      - --sysroot=/usr/aarch64-linux-gnu
+      - -fPIC

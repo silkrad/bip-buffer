@@ -1,0 +1,10 @@
+---
+:project:
+  :build_root: build/mips
+
+:flags:
+  :release:
+    :compile:
+      - --target=mips-linux-gnu
+      - --sysroot=/usr/mips-linux-gnu
+      - -fPIC

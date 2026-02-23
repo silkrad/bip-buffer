@@ -1,0 +1,9 @@
+---
+:project:
+  :build_root: build/x86_64
+
+:flags:
+  :release:
+    :compile:
+      - --target=x86_64-linux-gnu
+      - -fPIC

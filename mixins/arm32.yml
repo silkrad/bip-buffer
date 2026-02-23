@@ -1,0 +1,10 @@
+---
+:project:
+  :build_root: build/arm32
+
+:flags:
+  :release:
+    :compile:
+      - --target=arm-linux-gnueabihf
+      - --sysroot=/usr/arm-linux-gnueabihf
+      - -fPIC

@@ -1,0 +1,10 @@
+---
+:project:
+  :build_root: build/freebsd-arm64
+
+:flags:
+  :release:
+    :compile:
+      - --target=aarch64-unknown-freebsd14
+      - --sysroot=/opt/sysroot/freebsd-arm64
+      - -fPIC

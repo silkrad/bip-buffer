@@ -1,0 +1,10 @@
+---
+:project:
+  :build_root: build/powerpc
+
+:flags:
+  :release:
+    :compile:
+      - --target=powerpc-linux-gnu
+      - --sysroot=/usr/powerpc-linux-gnu
+      - -fPIC

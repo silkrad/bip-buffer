@@ -1,0 +1,10 @@
+---
+:project:
+  :build_root: build/mips64
+
+:flags:
+  :release:
+    :compile:
+      - --target=mips64-linux-gnuabi64
+      - --sysroot=/usr/mips64-linux-gnuabi64
+      - -fPIC

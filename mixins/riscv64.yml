@@ -1,0 +1,10 @@
+---
+:project:
+  :build_root: build/riscv64
+
+:flags:
+  :release:
+    :compile:
+      - --target=riscv64-linux-gnu
+      - --sysroot=/usr/riscv64-linux-gnu
+      - -fPIC
